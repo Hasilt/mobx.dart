@@ -6,7 +6,7 @@ part of 'generator_usage_test.dart';
 // StoreGenerator
 // **************************************************************************
 
-// ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic
+// ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic, no_leading_underscores_for_local_identifiers
 
 mixin _$TestStore on _TestStore, Store {
   Computed<String>? _$fieldsComputed;
@@ -66,6 +66,36 @@ mixin _$TestStore on _TestStore, Store {
     _$stuffAtom.reportWrite(value, super.stuff, () {
       super.stuff = value;
     });
+  }
+
+  late final _$alwaysAtom = Atom(name: '_TestStore.always', context: context);
+
+  @override
+  String get always {
+    _$alwaysAtom.reportRead();
+    return super.always;
+  }
+
+  @override
+  set always(String value) {
+    _$alwaysAtom.reportWrite(value, super.always, () {
+      super.always = value;
+    }, equals: observableAlwaysNotEqual);
+  }
+
+  late final _$customAtom = Atom(name: '_TestStore.custom', context: context);
+
+  @override
+  String get custom {
+    _$customAtom.reportRead();
+    return super.custom;
+  }
+
+  @override
+  set custom(String value) {
+    _$customAtom.reportWrite(value, super.custom, () {
+      super.custom = value;
+    }, equals: customEquals);
   }
 
   late final _$batchItem1Atom =
@@ -225,6 +255,8 @@ mixin _$TestStore on _TestStore, Store {
 field1: ${field1},
 field2: ${field2},
 stuff: ${stuff},
+always: ${always},
+custom: ${custom},
 batchItem1: ${batchItem1},
 batchItem2: ${batchItem2},
 batchItem3: ${batchItem3},

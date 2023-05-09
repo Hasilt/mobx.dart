@@ -3,6 +3,7 @@ import 'package:analyzer/dart/element/visitor.dart';
 import 'package:build/build.dart';
 import 'package:meta/meta.dart';
 import 'package:mobx/mobx.dart';
+
 // ignore: implementation_imports
 import 'package:mobx/src/api/annotations.dart'
     show ComputedMethod, MakeAction, MakeObservable, StoreConfig;
@@ -101,6 +102,7 @@ class StoreClassVisitor extends SimpleElementVisitor {
       name: element.name,
       isPrivate: element.isPrivate,
       isReadOnly: _isObservableReadOnly(element),
+      equals: _getEquals(element),
     );
 
     _storeTemplate.observables.add(template);
@@ -113,6 +115,11 @@ class StoreClassVisitor extends SimpleElementVisitor {
           ?.getField('readOnly')
           ?.toBoolValue() ??
       false;
+
+  ExecutableElement? _getEquals(FieldElement element) => _observableChecker
+      .firstAnnotationOfExact(element)
+      ?.getField('equals')
+      ?.toFunctionValue();
 
   bool _fieldIsNotValid(FieldElement element) => _any([
         errors.staticObservables.addIf(element.isStatic, element.name),
@@ -168,17 +175,23 @@ class StoreClassVisitor extends SimpleElementVisitor {
 
       if (element.isAsynchronous) {
         final template = AsyncActionTemplate(
-            storeTemplate: _storeTemplate,
-            isObservable: _observableChecker.hasAnnotationOfExact(element),
-            method:
-                MethodOverrideTemplate.fromElement(element, typeNameFinder));
+          storeTemplate: _storeTemplate,
+          isObservable: _observableChecker.hasAnnotationOfExact(element),
+          method: MethodOverrideTemplate.fromElement(element, typeNameFinder),
+          hasProtected: element.hasProtected,
+          hasVisibleForOverriding: element.hasVisibleForOverriding,
+          hasVisibleForTesting: element.hasVisibleForTesting,
+        );
 
         _storeTemplate.asyncActions.add(template);
       } else {
         final template = ActionTemplate(
-            storeTemplate: _storeTemplate,
-            method:
-                MethodOverrideTemplate.fromElement(element, typeNameFinder));
+          storeTemplate: _storeTemplate,
+          method: MethodOverrideTemplate.fromElement(element, typeNameFinder),
+          hasProtected: element.hasProtected,
+          hasVisibleForOverriding: element.hasVisibleForOverriding,
+          hasVisibleForTesting: element.hasVisibleForTesting,
+        );
 
         _storeTemplate.actions.add(template);
       }
@@ -189,14 +202,20 @@ class StoreClassVisitor extends SimpleElementVisitor {
 
       if (_asyncChecker.returnsFuture(element)) {
         final template = ObservableFutureTemplate(
-            method:
-                MethodOverrideTemplate.fromElement(element, typeNameFinder));
+          method: MethodOverrideTemplate.fromElement(element, typeNameFinder),
+          hasProtected: element.hasProtected,
+          hasVisibleForOverriding: element.hasVisibleForOverriding,
+          hasVisibleForTesting: element.hasVisibleForTesting,
+        );
 
         _storeTemplate.observableFutures.add(template);
       } else if (_asyncChecker.returnsStream(element)) {
         final template = ObservableStreamTemplate(
-            method:
-                MethodOverrideTemplate.fromElement(element, typeNameFinder));
+          method: MethodOverrideTemplate.fromElement(element, typeNameFinder),
+          hasProtected: element.hasProtected,
+          hasVisibleForOverriding: element.hasVisibleForOverriding,
+          hasVisibleForTesting: element.hasVisibleForTesting,
+        );
 
         _storeTemplate.observableStreams.add(template);
       }
